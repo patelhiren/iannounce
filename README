@@ -1,0 +1,6 @@
+iAnnounce by Hiren Patel
+
+You will need to setup "theos" by "dhowett" for this to compile correctly.
+Follow tutorial at http://iphonedevwiki.net/index.php/Theos/Getting_Started
+
+You will also need to dump the SpringBoard and VoiceServices Headers.

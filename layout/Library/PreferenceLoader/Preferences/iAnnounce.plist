@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>entry</key>
+	<dict>
+		<key>cell</key>
+		<string>PSLinkCell</string>
+		<key>icon</key>
+		<string>iAnnounce-Icon.png</string>
+		<key>label</key>
+		<string>iAnnounce</string>
+	</dict>
+	<key>items</key>
+	<array>
+		<dict>
+			<key>PostNotification</key>
+			<string>com.hiren.iAnnouncePrefsChanged</string>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<string>YES</string>
+			<key>defaults</key>
+			<string>com.hiren.iAnnounce</string>
+			<key>key</key>
+			<string>isEnabled</string>
+			<key>label</key>
+			<string>Enabled</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+		</dict>
+		<dict>
+			<key>PostNotification</key>
+			<string>com.hiren.iAnnouncePrefsChanged</string>
+			<key>cell</key>
+			<string>PSEditTextCell</string>
+			<key>default</key>
+			<string>Attention. Incoming call from %%CALLERID%%, %%PHONETYPE%%</string>
+			<key>defaults</key>
+			<string>com.hiren.iAnnounce</string>
+			<key>key</key>
+			<string>callString</string>
+			<key>label</key>
+			<string>Call String</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>footerText</key>
+			<string>You may customize the Call String to your liking. %%CALLERID%% will be replaced by the caller's name/telephone number. %%PHONETYPE%% indicates the type of phone (work, mobile, home, etc).</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>footerText</key>
+			<string>iAnnounce relies on the iPod volume to make announcements. Make sure you set the iPod volume to a comfortable level in order to hear announcements clearly. Also if you put the phone on vibrate iAnnouce respects that and does not annouce anything.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>footerText</key>
+			<string>iAnnounce 
+By: Hiren Patel &lt;http://www.twitter.com/patelhiren&gt;</string>
+		</dict>
+	</array>
+	<key>title</key>
+	<string>iAnnounce</string>
+</dict>
+</plist>
