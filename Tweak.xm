@@ -2,6 +2,7 @@
 
 static BOOL isEnabled;
 static NSString *announcementTemplateString;
+static float volumeLevel;
 
 %hook SBCallAlertDisplay
 
@@ -24,7 +25,7 @@ static NSString *announcementTemplateString;
 			callString = [callString stringByReplacingOccurrencesOfString:@"%%PHONETYPE%%" withString:@""];
 		}
 		
-		[iAnnounceHelper Say:callString callAlertDisplay:self];
+		[iAnnounceHelper Say:callString callAlertDisplay:self announceVolumeLevel:volumeLevel];
 	}
 	
 	%orig;
@@ -57,6 +58,9 @@ static void LoadSettings()
 			announcementTemplateString = @"Attention. Incoming call from %%CALLERID%%, %%PHONETYPE%%";
 		}
 		[announcementTemplateString retain];
+		
+		NSNumber *announceVolumeLevel = [settings objectForKey:@"iAnnounce-Volume"];
+        volumeLevel = announceVolumeLevel == nil ? 1.0 : [announceVolumeLevel floatValue];
 	}
 }
 

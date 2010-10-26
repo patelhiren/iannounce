@@ -30,6 +30,34 @@
 		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Announce Volume</string>
+		</dict>
+		<dict>
+			<key>PostNotification</key>
+			<string>com.hiren.iAnnouncePrefsChanged</string>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>default</key>
+			<string>1.0</string>
+			<key>defaults</key>
+			<string>com.hiren.iAnnounce</string>
+			<key>key</key>
+			<string>iAnnounce-Volume</string>
+			<key>label</key>
+			<string>Volume</string>
+			<key>max</key>
+			<real>1</real>
+			<key>min</key>
+			<real>0.0625</real>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Call String</string>
+			<key>footerText</key>
+			<string>You may customize the Call String to your liking. %%CALLERID%% will be replaced by the caller&apos;s name/telephone number. %%PHONETYPE%% indicates the type of phone (work, mobile, home, etc).</string>
 		</dict>
 		<dict>
 			<key>PostNotification</key>
@@ -42,27 +70,17 @@
 			<string>com.hiren.iAnnounce</string>
 			<key>key</key>
 			<string>callString</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
 			<key>label</key>
-			<string>Call String</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>footerText</key>
-			<string>You may customize the Call String to your liking. %%CALLERID%% will be replaced by the caller's name/telephone number. %%PHONETYPE%% indicates the type of phone (work, mobile, home, etc).</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>footerText</key>
-			<string>iAnnounce relies on the iPod volume to make announcements. Make sure you set the iPod volume to a comfortable level in order to hear announcements clearly. Also if you put the phone on vibrate iAnnouce respects that and does not annouce anything.</string>
-		</dict>
-		<dict>
-			<key>cell</key>
-			<string>PSGroupCell</string>
-			<key>footerText</key>
-			<string>iAnnounce 
-By: Hiren Patel &lt;http://www.twitter.com/patelhiren&gt;</string>
+			<string>iAnnounce By Hiren Patel
+http://www.twitter.com/patelhiren</string>
+			<key>isStaticText</key>
+			<true/>
+			<key>alignment</key>
+			<integer>1</integer>
 		</dict>
 	</array>
 	<key>title</key>

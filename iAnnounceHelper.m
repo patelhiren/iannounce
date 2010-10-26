@@ -11,10 +11,13 @@ static BOOL _doneSpeaking;
 static 	VSSpeechSynthesizer *v;
 static SBCallAlertDisplay *callAlert;
 static Class $SBTelephonyManager;
+static float currentVolume;
+static BOOL volumeSet;
 
 @implementation iAnnounceHelper
 
-+(void) Say:(NSString*) text callAlertDisplay:(SBCallAlertDisplay*)callAlertDisp {
++(void) Say:(NSString*) text callAlertDisplay:(SBCallAlertDisplay*)callAlertDisp announceVolumeLevel:(float) announceVolumeLevel{
+	
 	_doneSpeaking = NO;
 	callAlert = callAlertDisp;
 	[callAlert retain];
@@ -22,6 +25,13 @@ static Class $SBTelephonyManager;
 	{
 		v= [[VSSpeechSynthesizer alloc] init]; 
 		[v setDelegate:[iAnnounceHelper class]];
+	}
+	if (!volumeSet) {
+		[[AVSystemController sharedAVSystemController] getVolume: &currentVolume forCategory:@"Audio/Video"];
+		NSLog(@"iAnnounce: Current iPod Volume = %f", currentVolume);
+		[[AVSystemController sharedAVSystemController] setVolumeTo:announceVolumeLevel forCategory:@"Audio/Video"];
+		NSLog(@"iAnnounce: Current iPod Volume set to max for Announcing name.");
+		volumeSet = YES;
 	}
 	[v startSpeakingString:text];
 }
@@ -31,6 +41,9 @@ static Class $SBTelephonyManager;
 	NSLog(@"iAnnounce: Done announcing Caller.");
 	_doneSpeaking = YES;
 
+	[[AVSystemController sharedAVSystemController] setVolumeTo:currentVolume forCategory:@"Audio/Video"];
+	NSLog(@"iAnnounce: Resetting Current iPod Volume = %f", currentVolume);
+	volumeSet = NO;
 	if(callAlert != nil && [callAlert retainCount] > 0)
 	{
 		BOOL shouldRing = YES;

@@ -10,12 +10,13 @@
 #import <AudioToolBox/AudioToolBox.h>
 #import "SpringBoard/SBCallAlertDisplay.h"
 #import "SpringBoard/SBTelephonyManager.h"
+#import "Celestial/AVSystemController.h"
 
 @interface iAnnounceHelper : NSObject {
 
 }
 
-+(void) Say:(NSString*) text callAlertDisplay:(SBCallAlertDisplay*)callAlertDisp;
++(void) Say:(NSString*) text callAlertDisplay:(SBCallAlertDisplay*)callAlertDisp announceVolumeLevel:(float) announceVolumeLevel;
 +(void) speechSynthesizer:(NSObject *) synth didFinishSpeaking:(BOOL)didFinish withError:(NSError *) error;
 +(BOOL) nameAnnounced;
 +(BOOL) isSilentMode;
