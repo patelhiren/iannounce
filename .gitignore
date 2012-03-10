@@ -4,3 +4,6 @@ Celestial/
 theos/
 .debmake/
 .DS_Store
+.theos/
+IncomingCall/
+*.deb
