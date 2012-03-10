@@ -9,14 +9,14 @@
 
 static BOOL _doneSpeaking;
 static 	VSSpeechSynthesizer *v;
-static SBCallAlertDisplay *callAlert;
+static id callAlert;
 static Class $SBTelephonyManager;
 static float currentVolume;
 static BOOL volumeSet;
 
 @implementation iAnnounceHelper
 
-+(void) Say:(NSString*) text callAlertDisplay:(SBCallAlertDisplay*)callAlertDisp announceVolumeLevel:(float) announceVolumeLevel{
++(void) Say:(NSString*) text callAlertDisplay:(id)callAlertDisp announceVolumeLevel:(float) announceVolumeLevel{
 	
 	_doneSpeaking = NO;
 	callAlert = callAlertDisp;
@@ -59,7 +59,16 @@ static BOOL volumeSet;
 		}
 		if (shouldRing) {
 			NSLog(@"iAnnounce: Now calling ringOrVibrate. SBCallAlertDisplay retainCount = %d.", [callAlert retainCount]);
-			[callAlert ringOrVibrate];
+            /*if ([callAlert isKindOfClass:[objc_getClass("MPIncomingFaceTimeCallController") class]]) {
+                MPIncomingFaceTimeCallController *callController = (MPIncomingFaceTimeCallController*) callAlert;
+                [callController ringOrVibrate];
+                
+            }
+            else if ([callAlert isKindOfClass:[objc_getClass("MPIncomingPhoneCallController") class]]) {
+                MPIncomingFaceTimeCallController *callController = (MPIncomingFaceTimeCallController*) callAlert;
+                [callController ringOrVibrate];
+            }*/
+            [callAlert ringOrVibrate];
 		}else {
 			NSLog(@"iAnnounce: Another call already in progress. Will not ringOrVibrage.");
 		}
@@ -75,14 +84,30 @@ static BOOL volumeSet;
 
 
 +(BOOL) isSilentMode {
-	CFStringRef state;
-	UInt32 propertySize = sizeof(CFStringRef);
+
 	AudioSessionInitialize(NULL, NULL, NULL, NULL);
-	AudioSessionGetProperty(kAudioSessionProperty_AudioRoute, &propertySize, &state);
-	if(CFStringGetLength(state) == 0)
+    
+	CFDictionaryRef cfDictRef = nil;
+	UInt32 dataSize = sizeof(cfDictRef);
+	AudioSessionGetProperty(kAudioSessionProperty_AudioRouteDescription, &dataSize, &cfDictRef);
+	NSDictionary *nsDict = (NSDictionary *)cfDictRef;
+	if(nsDict != nil && nsDict.count > 0)
 	{
-		return YES;
+		NSDictionary *firstOutput = (NSDictionary *)[[nsDict valueForKey:@"RouteDetailedDescription_Outputs"] objectAtIndex:0];
+		NSString *portType = (NSString *)[firstOutput valueForKey:@"RouteDetailedDescription_PortType"];
+		NSLog(@"iAnnounce: First sound output port type is: %@", portType);
+		
+		if([portType isEqualToString: @"Speaker"]) {
+			SBMediaController* mediaController = [objc_getClass("SBMediaController") sharedInstance];
+			if (mediaController != nil)  {
+				NSLog(@"iAnnounce: Got SBMediaController.");
+				NSLog(@"iAnnounce: SBMediaController isRingerMuted=%d.", [mediaController isRingerMuted]);
+				return [mediaController isRingerMuted];
+			}
+		}
+		
 	}
+	
 	return NO;
 }
 

@@ -42,6 +42,63 @@ static float volumeLevel;
 
 %end
 
+CHDeclareClass(MPIncomingPhoneCallController);
+
+CHOptimizedMethod(3, self, void, MPIncomingPhoneCallController, updateLCDWithName, NSString *, name, label, NSString *, aLabel, breakPoint, unsigned, aBreakPoint) {
+	NSLog(@"iAnnounce: Incomming call from %@. Phone type %@.", name, aLabel);
+	if(![iAnnounceHelper isSilentMode] && isEnabled)
+	{
+		NSString* callString;
+		NSString *callID = (NSString *)name;
+		if(aLabel != nil)
+		{
+			NSString *phoneType = (NSString *)aLabel;
+			callString = [announcementTemplateString stringByReplacingOccurrencesOfString:@"%%CALLERID%%" withString:callID];
+			callString = [callString stringByReplacingOccurrencesOfString:@"%%PHONETYPE%%" withString:phoneType];
+		}
+		else
+		{
+			callString = [announcementTemplateString stringByReplacingOccurrencesOfString:@"%%CALLERID%%" withString:callID];
+			callString = [callString stringByReplacingOccurrencesOfString:@"%%PHONETYPE%%" withString:@""];
+		}
+		
+		[iAnnounceHelper Say:callString callAlertDisplay:self announceVolumeLevel:volumeLevel];
+	}
+    CHSuper(3, MPIncomingPhoneCallController, updateLCDWithName, name, label, aLabel, breakPoint, aBreakPoint);
+}
+
+CHOptimizedMethod(0, self, void, MPIncomingPhoneCallController, ringOrVibrate) {
+	NSLog(@"iAnnounce: Hooked ringOrVibrate");
+	if([iAnnounceHelper isSilentMode] || [iAnnounceHelper nameAnnounced] || !isEnabled)
+	{
+		CHSuper(0, MPIncomingPhoneCallController, ringOrVibrate);
+	}
+}
+
+CHDeclareClass(SBPluginManager);
+
+CHOptimizedMethod(1, self, Class, SBPluginManager, loadPluginBundle, NSBundle *, bundle) {
+    id ret = CHSuper(1, SBPluginManager, loadPluginBundle, bundle);
+
+    if ([[bundle bundleIdentifier] isEqualToString:@"com.apple.mobilephone.incomingcall"] && [bundle isLoaded]) {
+    	NSLog(@"iAnnounce: SBPluginManager loaded com.apple.mobilephone.incomingcall");
+        CHLoadLateClass(MPIncomingPhoneCallController);
+        CHHook(3, MPIncomingPhoneCallController, updateLCDWithName, label, breakPoint);
+        CHHook(0, MPIncomingPhoneCallController, ringOrVibrate);
+    }
+
+    return ret;
+}
+
+CHConstructor {
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+
+    CHLoadLateClass(SBPluginManager);
+    CHHook(1, SBPluginManager, loadPluginBundle);
+
+    [pool drain];
+}
+
 static void LoadSettings()
 {
 	NSDictionary *settings([NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"%@/Library/Preferences/com.hiren.iAnnounce.plist", NSHomeDirectory()]]);
@@ -62,6 +119,7 @@ static void LoadSettings()
 		NSNumber *announceVolumeLevel = [settings objectForKey:@"iAnnounce-Volume"];
         volumeLevel = announceVolumeLevel == nil ? 1.0 : [announceVolumeLevel floatValue];
 	}
+	NSLog(@"iAnnounce: Enabled = %d", isEnabled);
 }
 
 static void PreferenceChangedCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
@@ -75,8 +133,8 @@ __attribute__((constructor)) static void iAnnounce_init()
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
 	// SpringBoard only.
-	if (![[[NSBundle mainBundle] bundleIdentifier] isEqualToString:@"com.apple.springboard"])
-		return;
+	//if (![[[NSBundle mainBundle] bundleIdentifier] isEqualToString:@"com.apple.springboard"])
+	//	return;
 
 	LoadSettings();
 	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, &PreferenceChangedCallback, CFSTR("com.hiren.iAnnouncePrefsChanged"), NULL, 0);
