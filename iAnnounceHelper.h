@@ -21,6 +21,6 @@
 +(void) Say:(NSString*) text callAlertDisplay:(id)callAlertDisp announceVolumeLevel:(float) announceVolumeLevel;
 +(void) speechSynthesizer:(NSObject *) synth didFinishSpeaking:(BOOL)didFinish withError:(NSError *) error;
 +(BOOL) nameAnnounced;
-+(BOOL) isSilentMode;
++(BOOL) isSilentMode: (BOOL) headphonesOnlyAnnounce;
 
 @end

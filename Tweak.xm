@@ -3,13 +3,14 @@
 static BOOL isEnabled;
 static NSString *announcementTemplateString;
 static float volumeLevel;
+static BOOL headphonesOnly;
 
 %hook SBCallAlertDisplay
 
 - (void)updateLCDWithName:(id)fp8 label:(id)fp12 breakPoint:(unsigned int)fp16 {
 	%log;
 	
-	if(![iAnnounceHelper isSilentMode] && isEnabled)
+	if(![iAnnounceHelper isSilentMode:headphonesOnly] && isEnabled)
 	{
 		NSString* callString;
 		NSString *callID = (NSString *)fp8;
@@ -34,7 +35,7 @@ static float volumeLevel;
 - (void)ringOrVibrate
 {
 	%log;
-	if([iAnnounceHelper isSilentMode] || [iAnnounceHelper nameAnnounced] || !isEnabled)
+	if([iAnnounceHelper isSilentMode:headphonesOnly] || [iAnnounceHelper nameAnnounced] || !isEnabled)
 	{
 		%orig;
 	}
@@ -46,7 +47,7 @@ CHDeclareClass(MPIncomingPhoneCallController);
 
 CHOptimizedMethod(3, self, void, MPIncomingPhoneCallController, updateLCDWithName, NSString *, name, label, NSString *, aLabel, breakPoint, unsigned, aBreakPoint) {
 	NSLog(@"iAnnounce: Incomming call from %@. Phone type %@.", name, aLabel);
-	if(![iAnnounceHelper isSilentMode] && isEnabled)
+	if(![iAnnounceHelper isSilentMode:headphonesOnly] && isEnabled)
 	{
 		NSString* callString;
 		NSString *callID = (NSString *)name;
@@ -69,7 +70,7 @@ CHOptimizedMethod(3, self, void, MPIncomingPhoneCallController, updateLCDWithNam
 
 CHOptimizedMethod(0, self, void, MPIncomingPhoneCallController, ringOrVibrate) {
 	NSLog(@"iAnnounce: Hooked ringOrVibrate");
-	if([iAnnounceHelper isSilentMode] || [iAnnounceHelper nameAnnounced] || !isEnabled)
+	if([iAnnounceHelper isSilentMode:headphonesOnly] || [iAnnounceHelper nameAnnounced] || !isEnabled)
 	{
 		CHSuper(0, MPIncomingPhoneCallController, ringOrVibrate);
 	}
@@ -118,6 +119,9 @@ static void LoadSettings()
 		
 		NSNumber *announceVolumeLevel = [settings objectForKey:@"iAnnounce-Volume"];
         volumeLevel = announceVolumeLevel == nil ? 1.0 : [announceVolumeLevel floatValue];
+        
+        NSNumber *_headphonesOnly = [settings objectForKey:@"headphonesOnly"];
+        headphonesOnly = _headphonesOnly == nil ? true : [_headphonesOnly boolValue];
 	}
 	NSLog(@"iAnnounce: Enabled = %d", isEnabled);
 }

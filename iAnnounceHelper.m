@@ -14,6 +14,9 @@ static Class $SBTelephonyManager;
 static float currentVolume;
 static BOOL volumeSet;
 
+#define SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(v)  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] != NSOrderedAscending)
+
+
 @implementation iAnnounceHelper
 
 +(void) Say:(NSString*) text callAlertDisplay:(id)callAlertDisp announceVolumeLevel:(float) announceVolumeLevel{
@@ -83,31 +86,50 @@ static BOOL volumeSet;
 }
 
 
-+(BOOL) isSilentMode {
++(BOOL) isSilentMode: (BOOL) headphonesOnlyAnnounce {
 
 	AudioSessionInitialize(NULL, NULL, NULL, NULL);
-    
-	CFDictionaryRef cfDictRef = nil;
-	UInt32 dataSize = sizeof(cfDictRef);
-	AudioSessionGetProperty(kAudioSessionProperty_AudioRouteDescription, &dataSize, &cfDictRef);
-	NSDictionary *nsDict = (NSDictionary *)cfDictRef;
-	if(nsDict != nil && nsDict.count > 0)
-	{
-		NSDictionary *firstOutput = (NSDictionary *)[[nsDict valueForKey:@"RouteDetailedDescription_Outputs"] objectAtIndex:0];
-		NSString *portType = (NSString *)[firstOutput valueForKey:@"RouteDetailedDescription_PortType"];
-		NSLog(@"iAnnounce: First sound output port type is: %@", portType);
-		
-		if([portType isEqualToString: @"Speaker"]) {
-			SBMediaController* mediaController = [objc_getClass("SBMediaController") sharedInstance];
-			if (mediaController != nil)  {
-				NSLog(@"iAnnounce: Got SBMediaController.");
-				NSLog(@"iAnnounce: SBMediaController isRingerMuted=%d.", [mediaController isRingerMuted]);
-				return [mediaController isRingerMuted];
+
+	if(SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"5.0")) {
+		CFDictionaryRef cfDictRef = nil;
+		UInt32 dataSize = sizeof(cfDictRef);
+		AudioSessionGetProperty(kAudioSessionProperty_AudioRouteDescription, &dataSize, &cfDictRef);
+		NSDictionary *nsDict = (NSDictionary *)cfDictRef;
+		if(nsDict != nil && nsDict.count > 0)
+		{
+			NSDictionary *firstOutput = (NSDictionary *)[[nsDict valueForKey:@"RouteDetailedDescription_Outputs"] objectAtIndex:0];
+			NSString *portType = (NSString *)[firstOutput valueForKey:@"RouteDetailedDescription_PortType"];
+			NSLog(@"iAnnounce: First sound output port type is: %@", portType);
+			
+			if( headphonesOnlyAnnounce ) {
+				if ([portType isEqualToString: @"Headphones"] )
+				{
+					return NO;
+				}
+				return YES;
+			}
+			else {
+				if([portType isEqualToString: @"Speaker"]) {
+					SBMediaController* mediaController = [objc_getClass("SBMediaController") sharedInstance];
+					if (mediaController != nil)  {
+						NSLog(@"iAnnounce: Got SBMediaController.");
+						NSLog(@"iAnnounce: SBMediaController isRingerMuted=%d.", [mediaController isRingerMuted]);
+						return [mediaController isRingerMuted];
+					}
+				}
 			}
 		}
-		
 	}
-	
+	else {	
+		CFStringRef state;
+		UInt32 propertySize = sizeof(CFStringRef);
+		AudioSessionGetProperty(kAudioSessionProperty_AudioRoute, &propertySize, &state);
+		if(CFStringGetLength(state) == 0)
+		{
+			return YES;
+		}
+		return NO;
+	}
 	return NO;
 }
 
