@@ -1,3 +1,6 @@
+THEOS_DEVICE_IP=Hirens-iPhone
+export $THEOS_DEVICE_IP
+
 include theos/makefiles/common.mk
 
 TWEAK_NAME = iAnnounce

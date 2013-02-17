@@ -46,7 +46,7 @@ static BOOL headphonesOnly;
 CHDeclareClass(MPIncomingPhoneCallController);
 
 CHOptimizedMethod(3, self, void, MPIncomingPhoneCallController, updateLCDWithName, NSString *, name, label, NSString *, aLabel, breakPoint, unsigned, aBreakPoint) {
-	NSLog(@"iAnnounce: Incomming call from %@. Phone type %@.", name, aLabel);
+	NSLog(@"iAnnounce: Incoming call from %@. Phone type %@.", name, aLabel);
 	if(![iAnnounceHelper isSilentMode:headphonesOnly] && isEnabled)
 	{
 		NSString* callString;
@@ -62,7 +62,7 @@ CHOptimizedMethod(3, self, void, MPIncomingPhoneCallController, updateLCDWithNam
 			callString = [announcementTemplateString stringByReplacingOccurrencesOfString:@"%%CALLERID%%" withString:callID];
 			callString = [callString stringByReplacingOccurrencesOfString:@"%%PHONETYPE%%" withString:@""];
 		}
-		
+		NSLog(@"iAnnounce: Announcing Incoming call as %@", callString);
 		[iAnnounceHelper Say:callString callAlertDisplay:self announceVolumeLevel:volumeLevel];
 	}
     CHSuper(3, MPIncomingPhoneCallController, updateLCDWithName, name, label, aLabel, breakPoint, aBreakPoint);
@@ -113,7 +113,7 @@ static void LoadSettings()
 		announcementTemplateString = [settings objectForKey:@"callString"];
 		if(announcementTemplateString == nil || [announcementTemplateString length] == 0)
 		{
-			announcementTemplateString = @"Attention. Incoming call from %%CALLERID%%, %%PHONETYPE%%";
+			announcementTemplateString = @"Attention. Call from %%CALLERID%%, %%PHONETYPE%%";
 		}
 		[announcementTemplateString retain];
 		
@@ -121,7 +121,19 @@ static void LoadSettings()
         volumeLevel = announceVolumeLevel == nil ? 1.0 : [announceVolumeLevel floatValue];
         
         NSNumber *_headphonesOnly = [settings objectForKey:@"headphonesOnly"];
-        headphonesOnly = _headphonesOnly == nil ? true : [_headphonesOnly boolValue];
+        headphonesOnly = _headphonesOnly == nil ? false : [_headphonesOnly boolValue];
+	}
+	else
+	{
+		isEnabled = true;
+		if(announcementTemplateString != nil)
+			[announcementTemplateString release];
+		announcementTemplateString = [settings objectForKey:@"callString"];
+		announcementTemplateString = @"Attention. Call from %%CALLERID%%, %%PHONETYPE%%";
+		[announcementTemplateString retain];
+		
+		volumeLevel = 1.0;
+        headphonesOnly = false;
 	}
 	NSLog(@"iAnnounce: Enabled = %d", isEnabled);
 }

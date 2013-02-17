@@ -88,6 +88,8 @@ static BOOL volumeSet;
 
 +(BOOL) isSilentMode: (BOOL) headphonesOnlyAnnounce {
 
+@try
+{
 	AudioSessionInitialize(NULL, NULL, NULL, NULL);
 
 	if(SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"5.0")) {
@@ -97,26 +99,35 @@ static BOOL volumeSet;
 		NSDictionary *nsDict = (NSDictionary *)cfDictRef;
 		if(nsDict != nil && nsDict.count > 0)
 		{
-			NSDictionary *firstOutput = (NSDictionary *)[[nsDict valueForKey:@"RouteDetailedDescription_Outputs"] objectAtIndex:0];
-			NSString *portType = (NSString *)[firstOutput valueForKey:@"RouteDetailedDescription_PortType"];
-			NSLog(@"iAnnounce: First sound output port type is: %@", portType);
-			
-			if( headphonesOnlyAnnounce ) {
-				if ([portType isEqualToString: @"Headphones"] )
-				{
-					return NO;
+			NSLog(@"AudioSessionGetProperty val = %@", nsDict);
+			NSDictionary *routeDetailedDescriptionOutputsDict = [nsDict valueForKey:@"RouteDetailedDescription_Outputs"];
+			if(routeDetailedDescriptionOutputsDict != nil && routeDetailedDescriptionOutputsDict.count > 0)
+			{
+				NSDictionary *firstOutput = (NSDictionary *)[[nsDict valueForKey:@"RouteDetailedDescription_Outputs"] objectAtIndex:0];
+				NSString *portType = (NSString *)[firstOutput valueForKey:@"RouteDetailedDescription_PortType"];
+				NSLog(@"iAnnounce: First sound output port type is: %@", portType);
+				
+				if( headphonesOnlyAnnounce ) {
+					if ([portType isEqualToString: @"Headphones"] )
+					{
+						return NO;
+					}
+					return YES;
 				}
-				return YES;
-			}
-			else {
-				if([portType isEqualToString: @"Speaker"]) {
-					SBMediaController* mediaController = [objc_getClass("SBMediaController") sharedInstance];
-					if (mediaController != nil)  {
-						NSLog(@"iAnnounce: Got SBMediaController.");
-						NSLog(@"iAnnounce: SBMediaController isRingerMuted=%d.", [mediaController isRingerMuted]);
-						return [mediaController isRingerMuted];
+				else {
+					if([portType isEqualToString: @"Speaker"]) {
+						SBMediaController* mediaController = [objc_getClass("SBMediaController") sharedInstance];
+						if (mediaController != nil)  {
+							NSLog(@"iAnnounce: Got SBMediaController.");
+							NSLog(@"iAnnounce: SBMediaController isRingerMuted=%d.", [mediaController isRingerMuted]);
+							return [mediaController isRingerMuted];
+						}
 					}
 				}
+			}
+			else {
+				NSLog(@"iAnnounce: No sound output port available. Must be iOS 6. Will treat as silent mode.");
+				return YES;
 			}
 		}
 	}
@@ -129,6 +140,12 @@ static BOOL volumeSet;
 			return YES;
 		}
 		return NO;
+	}
+	
+	}@catch(NSException * e)
+	{
+		NSLog(@"iAnnounce: Exception while detecting Silent Mode. Will Assume silent mode. %@", e);
+		return YES;
 	}
 	return NO;
 }
