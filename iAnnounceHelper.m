@@ -19,15 +19,24 @@ static BOOL volumeSet;
 
 @implementation iAnnounceHelper
 
-+(void) Say:(NSString*) text callAlertDisplay:(id)callAlertDisp announceVolumeLevel:(float) announceVolumeLevel{
++(void) reloadSettings {
+	[v release];
+	v = nil;
+}
+
++(void) Say:(NSString*) text callAlertDisplay:(id)callAlertDisp announceVolumeLevel:(float) announceVolumeLevel usingLanguageCode:(NSString *) languageCode atSpeechRate:(float) rate atSpeechPitch:(float) pitch {
 	
 	_doneSpeaking = NO;
 	callAlert = callAlertDisp;
 	[callAlert retain];
 	if (v == nil)
 	{
-		v= [[VSSpeechSynthesizer alloc] init]; 
+		v = [[VSSpeechSynthesizer alloc] init]; 
+		[v retain];
 		[v setDelegate:[iAnnounceHelper class]];
+		
+		[v setRate: rate];
+		[v setPitch:pitch];
 	}
 	if (!volumeSet) {
 		[[AVSystemController sharedAVSystemController] getVolume: &currentVolume forCategory:@"Audio/Video"];
@@ -36,9 +45,14 @@ static BOOL volumeSet;
 		NSLog(@"iAnnounce: Current iPod Volume set to max for Announcing name.");
 		volumeSet = YES;
 	}
-	[v startSpeakingString:text];
+	
+	if(languageCode != nil && languageCode.length > 0) {
+		[v startSpeakingString:text withLanguageCode:languageCode];
+	}
+	else {
+		[v startSpeakingString:text];
+	}
 }
-
 
 + (void) speechSynthesizer:(NSObject *) synth didFinishSpeaking:(BOOL)didFinish withError:(NSError *) error  { 
 	NSLog(@"iAnnounce: Done announcing Caller.");
@@ -80,11 +94,24 @@ static BOOL volumeSet;
 	callAlert = nil;
 }
 
++(void) stopSpeaking {
+	NSLog(@"iAnnounce: Stopping announcing caller.");
+	_doneSpeaking = YES;
+	
+	if(v != nil) {
+		[v stopSpeakingAtNextBoundary:0];
+	}
+
+	[[AVSystemController sharedAVSystemController] setVolumeTo:currentVolume forCategory:@"Audio/Video"];
+	NSLog(@"iAnnounce: Resetting Current iPod Volume = %f", currentVolume);
+	volumeSet = NO;
+	[callAlert release];
+	callAlert = nil;
+}
 
 +(BOOL)nameAnnounced {
 	return _doneSpeaking;
 }
-
 
 +(BOOL) isSilentMode: (BOOL) headphonesOnlyAnnounce {
 

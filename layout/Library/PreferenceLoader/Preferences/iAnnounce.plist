@@ -75,7 +75,27 @@
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
-			<string>Announce only via ( requires iOS5 )</string>
+			<string>FaceTime String ( iOS 5+ only )</string>
+			<key>footerText</key>
+			<string>You may customize the Facetime String to your liking. %%CALLERID%% will be replaced by the caller&apos;s name/telephone number.</string>
+		</dict>
+		<dict>
+			<key>PostNotification</key>
+			<string>com.hiren.iAnnouncePrefsChanged</string>
+			<key>cell</key>
+			<string>PSEditTextCell</string>
+			<key>default</key>
+			<string>Attention. FaceTime from %%CALLERID%%</string>
+			<key>defaults</key>
+			<string>com.hiren.iAnnounce</string>
+			<key>key</key>
+			<string>facetimeString</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Announce only via ( iOS 5+ only )</string>
 		</dict>
 		<dict>
 			<key>PostNotification</key>
@@ -90,6 +110,74 @@
 			<string>headphonesOnly</string>
 			<key>label</key>
 			<string>Headphones</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Announce Rate</string>
+		</dict>
+		<dict>
+			<key>PostNotification</key>
+			<string>com.hiren.iAnnouncePrefsChanged</string>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>default</key>
+			<string>1.0</string>
+			<key>defaults</key>
+			<string>com.hiren.iAnnounce</string>
+			<key>key</key>
+			<string>iAnnounce-Rate</string>
+			<key>label</key>
+			<string>Rate</string>
+			<key>max</key>
+			<real>1</real>
+			<key>min</key>
+			<real>0.0625</real>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Announce Pitch</string>
+		</dict>
+		<dict>
+			<key>PostNotification</key>
+			<string>com.hiren.iAnnouncePrefsChanged</string>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>default</key>
+			<string>0.5</string>
+			<key>defaults</key>
+			<string>com.hiren.iAnnounce</string>
+			<key>key</key>
+			<string>iAnnounce-Pitch</string>
+			<key>label</key>
+			<string>Pitch</string>
+			<key>max</key>
+			<real>1</real>
+			<key>min</key>
+			<real>0.0625</real>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Announcement Language Code</string>
+			<key>footerText</key>
+			<string>To use system default language leave this value blank. Supported Language codes in iOS 6.1 are th-TH, pt-BR, sk-SK, fr-CA, ro-RO, no-NO, fi-FI, pl-PL, de-DE, nl-NL, id-ID, tr-TR, it-IT, pt-PT, fr-FR, ru-RU, es-MX, zh-HK, sv-SE, hu-HU, zh-TW, es-ES, zh-CN, nl-BE, en-GB, ar-SA, ko-KR, cs-CZ, en-ZA, en-AU, da-DK, en-US, en-IE, hi-IN, el-GR, ja-JP</string>
+		</dict>
+		<dict>
+			<key>PostNotification</key>
+			<string>com.hiren.iAnnouncePrefsChanged</string>
+			<key>cell</key>
+			<string>PSEditTextCell</string>
+			<key>default</key>
+			<string></string>
+			<key>defaults</key>
+			<string>com.hiren.iAnnounce</string>
+			<key>key</key>
+			<string>languageCodeString</string>
 		</dict>
 		<dict>
 			<key>cell</key>

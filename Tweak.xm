@@ -2,8 +2,12 @@
 
 static BOOL isEnabled;
 static NSString *announcementTemplateString;
+static NSString *announcementFacetimeTemplateString;
 static float volumeLevel;
 static BOOL headphonesOnly;
+static NSString *languageCode;
+static float speechRate;
+static float speechPitch;
 
 %hook SBCallAlertDisplay
 
@@ -26,7 +30,7 @@ static BOOL headphonesOnly;
 			callString = [callString stringByReplacingOccurrencesOfString:@"%%PHONETYPE%%" withString:@""];
 		}
 		
-		[iAnnounceHelper Say:callString callAlertDisplay:self announceVolumeLevel:volumeLevel];
+		[iAnnounceHelper Say:callString callAlertDisplay:self announceVolumeLevel:volumeLevel usingLanguageCode:languageCode atSpeechRate:speechRate atSpeechPitch:speechPitch];
 	}
 	
 	%orig;
@@ -42,6 +46,38 @@ static BOOL headphonesOnly;
 }
 
 %end
+
+CHDeclareClass(MPIncomingFaceTimeCallController);
+
+CHOptimizedMethod(2, self, void, MPIncomingFaceTimeCallController, updateTopBarWithName, NSString *, name, image, id, fp12) {
+	NSLog(@"iAnnounce: Facetime call from %@. Phone type %@.", name);
+	if(![iAnnounceHelper isSilentMode:headphonesOnly] && isEnabled)
+	{
+		NSString* callString;
+		NSString *callID = (NSString *)name;
+		
+		callString = [announcementFacetimeTemplateString stringByReplacingOccurrencesOfString:@"%%CALLERID%%" withString:callID];
+		callString = [callString stringByReplacingOccurrencesOfString:@"%%PHONETYPE%%" withString:@""];
+		
+		NSLog(@"iAnnounce: Announcing Facetime call as %@", callString);
+		[iAnnounceHelper Say:callString callAlertDisplay:self announceVolumeLevel:volumeLevel usingLanguageCode:languageCode atSpeechRate:speechRate atSpeechPitch:speechPitch];
+	}
+    CHSuper(2, MPIncomingFaceTimeCallController, updateTopBarWithName, name, image, fp12);
+}
+
+CHOptimizedMethod(0, self, void, MPIncomingFaceTimeCallController, ringOrVibrate) {
+	NSLog(@"iAnnounce: Hooked [MPIncomingFaceTimeCallController ringOrVibrate]");
+	if([iAnnounceHelper isSilentMode:headphonesOnly] || [iAnnounceHelper nameAnnounced] || !isEnabled)
+	{
+		CHSuper(0, MPIncomingFaceTimeCallController, ringOrVibrate);
+	}
+}
+
+CHOptimizedMethod(0, self, void, MPIncomingFaceTimeCallController, stopRingingOrVibrating) {
+	NSLog(@"iAnnounce: Hooked [MPIncomingFaceTimeCallController stopRingingOrVibrating]");
+	[iAnnounceHelper stopSpeaking];
+	CHSuper(0, MPIncomingFaceTimeCallController, stopRingingOrVibrating);
+}
 
 CHDeclareClass(MPIncomingPhoneCallController);
 
@@ -63,7 +99,7 @@ CHOptimizedMethod(3, self, void, MPIncomingPhoneCallController, updateLCDWithNam
 			callString = [callString stringByReplacingOccurrencesOfString:@"%%PHONETYPE%%" withString:@""];
 		}
 		NSLog(@"iAnnounce: Announcing Incoming call as %@", callString);
-		[iAnnounceHelper Say:callString callAlertDisplay:self announceVolumeLevel:volumeLevel];
+		[iAnnounceHelper Say:callString callAlertDisplay:self announceVolumeLevel:volumeLevel usingLanguageCode:languageCode atSpeechRate:speechRate atSpeechPitch:speechPitch];
 	}
     CHSuper(3, MPIncomingPhoneCallController, updateLCDWithName, name, label, aLabel, breakPoint, aBreakPoint);
 }
@@ -76,6 +112,12 @@ CHOptimizedMethod(0, self, void, MPIncomingPhoneCallController, ringOrVibrate) {
 	}
 }
 
+CHOptimizedMethod(0, self, void, MPIncomingPhoneCallController, stopRingingOrVibrating) {
+	NSLog(@"iAnnounce: Hooked stopRingingOrVibrating");
+	[iAnnounceHelper stopSpeaking];
+	CHSuper(0, MPIncomingPhoneCallController, stopRingingOrVibrating);
+}
+
 CHDeclareClass(SBPluginManager);
 
 CHOptimizedMethod(1, self, Class, SBPluginManager, loadPluginBundle, NSBundle *, bundle) {
@@ -86,6 +128,12 @@ CHOptimizedMethod(1, self, Class, SBPluginManager, loadPluginBundle, NSBundle *,
         CHLoadLateClass(MPIncomingPhoneCallController);
         CHHook(3, MPIncomingPhoneCallController, updateLCDWithName, label, breakPoint);
         CHHook(0, MPIncomingPhoneCallController, ringOrVibrate);
+        CHHook(0, MPIncomingPhoneCallController, stopRingingOrVibrating);
+        
+        CHLoadLateClass(MPIncomingFaceTimeCallController);
+        CHHook(2, MPIncomingFaceTimeCallController, updateTopBarWithName, image);
+        CHHook(0, MPIncomingFaceTimeCallController, ringOrVibrate);
+        CHHook(0, MPIncomingFaceTimeCallController, stopRingingOrVibrating);
     }
 
     return ret;
@@ -102,38 +150,76 @@ CHConstructor {
 
 static void LoadSettings()
 {
+	[announcementTemplateString release];
+	[languageCode release];
+	[announcementFacetimeTemplateString release];
+	
+	[iAnnounceHelper reloadSettings];
+	
 	NSDictionary *settings([NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"%@/Library/Preferences/com.hiren.iAnnounce.plist", NSHomeDirectory()]]);
 	if (settings != nil)
 	{
 		NSNumber *enabled = [settings objectForKey:@"isEnabled"];
         isEnabled = enabled == nil ? true : [enabled boolValue];
-		
-		if(announcementTemplateString != nil)
-			[announcementTemplateString release];
+				
 		announcementTemplateString = [settings objectForKey:@"callString"];
 		if(announcementTemplateString == nil || [announcementTemplateString length] == 0)
 		{
 			announcementTemplateString = @"Attention. Call from %%CALLERID%%, %%PHONETYPE%%";
 		}
 		[announcementTemplateString retain];
+			
+		announcementFacetimeTemplateString = [settings objectForKey:@"facetimeString"];
+		if(announcementFacetimeTemplateString == nil || [announcementFacetimeTemplateString length] == 0)
+		{
+			announcementFacetimeTemplateString = @"Attention. FaceTime from %%CALLERID%%";
+		}
+		[announcementFacetimeTemplateString retain];
 		
 		NSNumber *announceVolumeLevel = [settings objectForKey:@"iAnnounce-Volume"];
         volumeLevel = announceVolumeLevel == nil ? 1.0 : [announceVolumeLevel floatValue];
         
         NSNumber *_headphonesOnly = [settings objectForKey:@"headphonesOnly"];
         headphonesOnly = _headphonesOnly == nil ? false : [_headphonesOnly boolValue];
+        
+        languageCode = [settings objectForKey:@"languageCodeString"];
+        if(languageCode != nil && languageCode.length > 0) {
+        	[languageCode retain];
+        	NSSet *availableLanguageCodes = [VSSpeechSynthesizer availableLanguageCodes];
+        	NSLog(@"iAnnounce: Available Language Codes: %@", availableLanguageCodes);
+        	BOOL languageCodeFound = [availableLanguageCodes containsObject:languageCode];
+        	if(!languageCodeFound) {
+        		NSLog(@"iAnnounce: Language Code %@ is not a valid language code. Will use system settings.", languageCode);
+        		[languageCode release];
+        		languageCode = nil;
+        	}
+        }
+        else {
+        	languageCode = nil;
+        }
+        
+        NSNumber *speechRateLevel = [settings objectForKey:@"iAnnounce-Rate"];
+        speechRate = speechRateLevel == nil ? 1.0 : [speechRateLevel floatValue];
+        
+        NSNumber *speechPitchLevel = [settings objectForKey:@"iAnnounce-Pitch"];
+        speechPitch = speechPitchLevel == nil ? 0.5 : [speechPitchLevel floatValue];
 	}
 	else
 	{
 		isEnabled = true;
-		if(announcementTemplateString != nil)
-			[announcementTemplateString release];
+		
 		announcementTemplateString = [settings objectForKey:@"callString"];
 		announcementTemplateString = @"Attention. Call from %%CALLERID%%, %%PHONETYPE%%";
 		[announcementTemplateString retain];
 		
+		announcementFacetimeTemplateString = @"Attention. FaceTime from %%CALLERID%%";
+		[announcementFacetimeTemplateString retain];
+		
 		volumeLevel = 1.0;
         headphonesOnly = false;
+        languageCode = nil;
+        speechRate = 1.0;
+        speechPitch = 0.5;
 	}
 	NSLog(@"iAnnounce: Enabled = %d", isEnabled);
 }
