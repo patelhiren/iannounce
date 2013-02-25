@@ -13,6 +13,8 @@ static id callAlert;
 static Class $SBTelephonyManager;
 static float currentVolume;
 static BOOL volumeSet;
+static BOOL isHeadphonesConnected;
+static BOOL _isSpeaking;
 
 #define SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(v)  ([[[UIDevice currentDevice] systemVersion] compare:v options:NSNumericSearch] != NSOrderedAscending)
 
@@ -25,10 +27,28 @@ static BOOL volumeSet;
 }
 
 +(void) Say:(NSString*) text callAlertDisplay:(id)callAlertDisp announceVolumeLevel:(float) announceVolumeLevel usingLanguageCode:(NSString *) languageCode atSpeechRate:(float) rate atSpeechPitch:(float) pitch {
-	
+	if(_isSpeaking) {
+		return;
+	}
 	_doneSpeaking = NO;
+	_isSpeaking = YES;
 	callAlert = callAlertDisp;
 	[callAlert retain];
+	
+	if (!volumeSet) {
+		NSString *portType = [[AVSystemController sharedAVSystemController] routeForCategory:@"Audio/Video"];
+		NSLog(@"iAnnounce: routeForCategory = %@", portType);
+		if([portType isEqualToString: @"Speaker"]) {
+			if([[AVSystemController sharedAVSystemController] getVolume: &currentVolume forCategory:@"Audio/Video"]) {
+				NSLog(@"iAnnounce: Current iPod Volume = %f", currentVolume);
+				if([[AVSystemController sharedAVSystemController] setVolumeTo:announceVolumeLevel forCategory:@"Audio/Video"]) {
+					NSLog(@"iAnnounce: Current iPod Volume set to %f for Announcing name.", announceVolumeLevel);
+					volumeSet = YES;
+				}
+			}
+		}
+	}
+	
 	if (v == nil)
 	{
 		v = [[VSSpeechSynthesizer alloc] init]; 
@@ -37,13 +57,6 @@ static BOOL volumeSet;
 		
 		[v setRate: rate];
 		[v setPitch:pitch];
-	}
-	if (!volumeSet) {
-		[[AVSystemController sharedAVSystemController] getVolume: &currentVolume forCategory:@"Audio/Video"];
-		NSLog(@"iAnnounce: Current iPod Volume = %f", currentVolume);
-		[[AVSystemController sharedAVSystemController] setVolumeTo:announceVolumeLevel forCategory:@"Audio/Video"];
-		NSLog(@"iAnnounce: Current iPod Volume set to max for Announcing name.");
-		volumeSet = YES;
 	}
 	
 	if(languageCode != nil && languageCode.length > 0) {
@@ -57,10 +70,13 @@ static BOOL volumeSet;
 + (void) speechSynthesizer:(NSObject *) synth didFinishSpeaking:(BOOL)didFinish withError:(NSError *) error  { 
 	NSLog(@"iAnnounce: Done announcing Caller.");
 	_doneSpeaking = YES;
-
-	[[AVSystemController sharedAVSystemController] setVolumeTo:currentVolume forCategory:@"Audio/Video"];
-	NSLog(@"iAnnounce: Resetting Current iPod Volume = %f", currentVolume);
-	volumeSet = NO;
+	_isSpeaking = NO;
+	
+	if(volumeSet) {
+		[[AVSystemController sharedAVSystemController] setVolumeTo:currentVolume forCategory:@"Audio/Video"];
+		NSLog(@"iAnnounce: Resetting Current iPod Volume = %f", currentVolume);
+		volumeSet = NO;
+	}
 	if(callAlert != nil && [callAlert retainCount] > 0)
 	{
 		BOOL shouldRing = YES;
@@ -97,14 +113,15 @@ static BOOL volumeSet;
 +(void) stopSpeaking {
 	NSLog(@"iAnnounce: Stopping announcing caller.");
 	_doneSpeaking = YES;
-	
+	_isSpeaking = NO;
 	if(v != nil) {
 		[v stopSpeakingAtNextBoundary:0];
 	}
-
-	[[AVSystemController sharedAVSystemController] setVolumeTo:currentVolume forCategory:@"Audio/Video"];
-	NSLog(@"iAnnounce: Resetting Current iPod Volume = %f", currentVolume);
-	volumeSet = NO;
+	if(volumeSet) {
+		[[AVSystemController sharedAVSystemController] setVolumeTo:currentVolume forCategory:@"Audio/Video"];
+		NSLog(@"iAnnounce: Resetting Current iPod Volume = %f", currentVolume);
+		volumeSet = NO;
+	}
 	[callAlert release];
 	callAlert = nil;
 }
@@ -116,49 +133,33 @@ static BOOL volumeSet;
 +(BOOL) isSilentMode: (BOOL) headphonesOnlyAnnounce {
 
 @try
-{
-	AudioSessionInitialize(NULL, NULL, NULL, NULL);
-
+{	
 	if(SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"5.0")) {
-		CFDictionaryRef cfDictRef = nil;
-		UInt32 dataSize = sizeof(cfDictRef);
-		AudioSessionGetProperty(kAudioSessionProperty_AudioRouteDescription, &dataSize, &cfDictRef);
-		NSDictionary *nsDict = (NSDictionary *)cfDictRef;
-		if(nsDict != nil && nsDict.count > 0)
-		{
-			NSLog(@"AudioSessionGetProperty val = %@", nsDict);
-			NSDictionary *routeDetailedDescriptionOutputsDict = [nsDict valueForKey:@"RouteDetailedDescription_Outputs"];
-			if(routeDetailedDescriptionOutputsDict != nil && routeDetailedDescriptionOutputsDict.count > 0)
-			{
-				NSDictionary *firstOutput = (NSDictionary *)[[nsDict valueForKey:@"RouteDetailedDescription_Outputs"] objectAtIndex:0];
-				NSString *portType = (NSString *)[firstOutput valueForKey:@"RouteDetailedDescription_PortType"];
-				NSLog(@"iAnnounce: First sound output port type is: %@", portType);
-				
-				if( headphonesOnlyAnnounce ) {
-					if ([portType isEqualToString: @"Headphones"] )
-					{
-						return NO;
-					}
-					return YES;
-				}
-				else {
-					if([portType isEqualToString: @"Speaker"]) {
-						SBMediaController* mediaController = [objc_getClass("SBMediaController") sharedInstance];
-						if (mediaController != nil)  {
-							NSLog(@"iAnnounce: Got SBMediaController.");
-							NSLog(@"iAnnounce: SBMediaController isRingerMuted=%d.", [mediaController isRingerMuted]);
-							return [mediaController isRingerMuted];
-						}
-					}
-				}
-			}
-			else {
-				NSLog(@"iAnnounce: No sound output port available. Must be iOS 6. Will treat as silent mode.");
-				return YES;
+	
+		SBMediaController* mediaController = [objc_getClass("SBMediaController") sharedInstance];
+		if (mediaController != nil)  {
+			NSLog(@"iAnnounce: Got SBMediaController.");
+			NSLog(@"iAnnounce: SBMediaController isRingerMuted=%d.", [mediaController isRingerMuted]);
+		}
+		
+		NSString *portType = [[AVSystemController sharedAVSystemController] routeForCategory:@"Audio/Video"];
+		NSLog(@"iAnnounce: routeForCategory = %@", portType);
+		if([portType isEqualToString: @"Headphone"]) {
+			NSLog(@"iAnnounce: Headphones only announce and Headphones are connected.");
+			isHeadphonesConnected = YES;
+		}
+		
+		if( headphonesOnlyAnnounce && !isHeadphonesConnected) {
+			return YES;
+		}
+		else {
+			if([portType isEqualToString: @"Speaker"] && mediaController != nil) {
+				return [mediaController isRingerMuted];
 			}
 		}
 	}
 	else {	
+		AudioSessionInitialize(NULL, NULL, NULL, NULL);
 		CFStringRef state;
 		UInt32 propertySize = sizeof(CFStringRef);
 		AudioSessionGetProperty(kAudioSessionProperty_AudioRoute, &propertySize, &state);

@@ -1,7 +1,7 @@
 Package: com.hiren.iAnnounce
 Name: iAnnounce
 Depends: mobilesubstrate, firmware (>= 4.0), gsc.armv7, preferenceloader
-Version: 3.0.0
+Version: 3.0.1
 Architecture: iphoneos-arm
 Icon: /Library/PreferenceLoader/Preferences/iAnnounce-Icon@2x.png
 Description: Announces incomming calls. Can customize announce options under the Settings app. Follow me on http://www.twitter.com/patelhiren

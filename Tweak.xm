@@ -14,7 +14,7 @@ static float speechPitch;
 - (void)updateLCDWithName:(id)fp8 label:(id)fp12 breakPoint:(unsigned int)fp16 {
 	%log;
 	
-	if(![iAnnounceHelper isSilentMode:headphonesOnly] && isEnabled)
+	if(isEnabled && ![iAnnounceHelper isSilentMode:headphonesOnly])
 	{
 		NSString* callString;
 		NSString *callID = (NSString *)fp8;
@@ -39,7 +39,7 @@ static float speechPitch;
 - (void)ringOrVibrate
 {
 	%log;
-	if([iAnnounceHelper isSilentMode:headphonesOnly] || [iAnnounceHelper nameAnnounced] || !isEnabled)
+	if(!isEnabled || [iAnnounceHelper nameAnnounced] || [iAnnounceHelper isSilentMode:headphonesOnly])
 	{
 		%orig;
 	}
@@ -51,7 +51,7 @@ CHDeclareClass(MPIncomingFaceTimeCallController);
 
 CHOptimizedMethod(2, self, void, MPIncomingFaceTimeCallController, updateTopBarWithName, NSString *, name, image, id, fp12) {
 	NSLog(@"iAnnounce: Facetime call from %@. Phone type %@.", name);
-	if(![iAnnounceHelper isSilentMode:headphonesOnly] && isEnabled)
+	if(isEnabled && ![iAnnounceHelper isSilentMode:headphonesOnly])
 	{
 		NSString* callString;
 		NSString *callID = (NSString *)name;
@@ -67,15 +67,17 @@ CHOptimizedMethod(2, self, void, MPIncomingFaceTimeCallController, updateTopBarW
 
 CHOptimizedMethod(0, self, void, MPIncomingFaceTimeCallController, ringOrVibrate) {
 	NSLog(@"iAnnounce: Hooked [MPIncomingFaceTimeCallController ringOrVibrate]");
-	if([iAnnounceHelper isSilentMode:headphonesOnly] || [iAnnounceHelper nameAnnounced] || !isEnabled)
+	if(!isEnabled || [iAnnounceHelper nameAnnounced] || [iAnnounceHelper isSilentMode:headphonesOnly])
 	{
 		CHSuper(0, MPIncomingFaceTimeCallController, ringOrVibrate);
 	}
 }
 
 CHOptimizedMethod(0, self, void, MPIncomingFaceTimeCallController, stopRingingOrVibrating) {
-	NSLog(@"iAnnounce: Hooked [MPIncomingFaceTimeCallController stopRingingOrVibrating]");
-	[iAnnounceHelper stopSpeaking];
+	if(isEnabled) {
+		NSLog(@"iAnnounce: Hooked stopRingingOrVibrating");
+		[iAnnounceHelper stopSpeaking];
+	}
 	CHSuper(0, MPIncomingFaceTimeCallController, stopRingingOrVibrating);
 }
 
@@ -83,7 +85,7 @@ CHDeclareClass(MPIncomingPhoneCallController);
 
 CHOptimizedMethod(3, self, void, MPIncomingPhoneCallController, updateLCDWithName, NSString *, name, label, NSString *, aLabel, breakPoint, unsigned, aBreakPoint) {
 	NSLog(@"iAnnounce: Incoming call from %@. Phone type %@.", name, aLabel);
-	if(![iAnnounceHelper isSilentMode:headphonesOnly] && isEnabled)
+	if(isEnabled && ![iAnnounceHelper isSilentMode:headphonesOnly])
 	{
 		NSString* callString;
 		NSString *callID = (NSString *)name;
@@ -106,15 +108,17 @@ CHOptimizedMethod(3, self, void, MPIncomingPhoneCallController, updateLCDWithNam
 
 CHOptimizedMethod(0, self, void, MPIncomingPhoneCallController, ringOrVibrate) {
 	NSLog(@"iAnnounce: Hooked ringOrVibrate");
-	if([iAnnounceHelper isSilentMode:headphonesOnly] || [iAnnounceHelper nameAnnounced] || !isEnabled)
+	if(!isEnabled || [iAnnounceHelper nameAnnounced] || [iAnnounceHelper isSilentMode:headphonesOnly])
 	{
 		CHSuper(0, MPIncomingPhoneCallController, ringOrVibrate);
 	}
 }
 
 CHOptimizedMethod(0, self, void, MPIncomingPhoneCallController, stopRingingOrVibrating) {
-	NSLog(@"iAnnounce: Hooked stopRingingOrVibrating");
-	[iAnnounceHelper stopSpeaking];
+	if(isEnabled) {
+		NSLog(@"iAnnounce: Hooked stopRingingOrVibrating");
+		[iAnnounceHelper stopSpeaking];
+	}
 	CHSuper(0, MPIncomingPhoneCallController, stopRingingOrVibrating);
 }
 
