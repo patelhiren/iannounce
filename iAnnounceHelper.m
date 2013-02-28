@@ -69,7 +69,6 @@ static BOOL _isSpeaking;
 
 + (void) speechSynthesizer:(NSObject *) synth didFinishSpeaking:(BOOL)didFinish withError:(NSError *) error  { 
 	NSLog(@"iAnnounce: Done announcing Caller.");
-	_doneSpeaking = YES;
 	_isSpeaking = NO;
 	
 	if(volumeSet) {
@@ -91,17 +90,16 @@ static BOOL _isSpeaking;
 			}
 		}
 		if (shouldRing) {
-			NSLog(@"iAnnounce: Now calling ringOrVibrate. SBCallAlertDisplay retainCount = %d.", [callAlert retainCount]);
-            /*if ([callAlert isKindOfClass:[objc_getClass("MPIncomingFaceTimeCallController") class]]) {
-                MPIncomingFaceTimeCallController *callController = (MPIncomingFaceTimeCallController*) callAlert;
-                [callController ringOrVibrate];
-                
+			_doneSpeaking = YES;
+			if([callAlert isKindOfClass:[objc_getClass("CallBarController") class]]) {
+				NSLog(@"iAnnounce: Now calling CallBarController playRingtoneOrVibrate. CallBarController retainCount = %d.", [callAlert retainCount]);
+				[callAlert playRingtoneOrVibrate];
+			}
+			else {
+				NSLog(@"iAnnounce: Now calling ringOrVibrate. SBCallAlertDisplay retainCount = %d.", [callAlert retainCount]);
+				[callAlert ringOrVibrate];
             }
-            else if ([callAlert isKindOfClass:[objc_getClass("MPIncomingPhoneCallController") class]]) {
-                MPIncomingFaceTimeCallController *callController = (MPIncomingFaceTimeCallController*) callAlert;
-                [callController ringOrVibrate];
-            }*/
-            [callAlert ringOrVibrate];
+            _doneSpeaking = NO;
 		}else {
 			NSLog(@"iAnnounce: Another call already in progress. Will not ringOrVibrage.");
 		}
@@ -112,7 +110,7 @@ static BOOL _isSpeaking;
 
 +(void) stopSpeaking {
 	NSLog(@"iAnnounce: Stopping announcing caller.");
-	_doneSpeaking = YES;
+	_doneSpeaking = NO;
 	_isSpeaking = NO;
 	if(v != nil) {
 		[v stopSpeakingAtNextBoundary:0];

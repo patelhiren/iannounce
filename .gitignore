@@ -6,4 +6,5 @@ theos/
 .DS_Store
 .theos/
 IncomingCall/
+CallBar/
 *.deb
