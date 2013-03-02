@@ -157,7 +157,7 @@ CHDeclareClass(CallBarController);
 CHOptimizedMethod(4, self, void, CallBarController, showCallBarWithCall, id, call, callType, unsigned, type, fromID, id, anId, conferenceID, id, anId4) {	
 	CHSuper(4, CallBarController, showCallBarWithCall, call, callType, type, fromID, anId, conferenceID, anId4);
 		
-	if(isEnabled && ![iAnnounceHelper isSilentMode:headphonesOnly])
+	if(isEnabled && (type == 1 || type == 2) && ![iAnnounceHelper isSilentMode:headphonesOnly])
 	{
 		NSString* callString;
 		NSString *callID = [self contactNameForNumber:[self callingNumber]];
@@ -166,6 +166,11 @@ CHOptimizedMethod(4, self, void, CallBarController, showCallBarWithCall, id, cal
 		}
 		NSLog(@"iAnnounce: Hooked CallBarController showCallBarWithCall. call:%@, callType: %d, type: %@, conferenceID:%@, callingNumber:%@, contactNameForNumber: %@", call, type, anId, anId4, [self callingNumber], callID);
 		NSString *aLabel = nil;
+
+		if(callID == nil || ([callID length] <= 0)) {
+			NSLog(@"iAnnounce: CallBarController showCallBarWithCall. Replacing missing CallerID with 'BLOCKED'.");
+			callID = @"BLOCKED";
+		}
 		
 		NSString *templateString = announcementFacetimeTemplateString;
 		if(type != 2) {

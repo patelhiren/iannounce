@@ -146,6 +146,9 @@ static BOOL _isSpeaking;
 			NSLog(@"iAnnounce: Headphones only announce and Headphones are connected.");
 			isHeadphonesConnected = YES;
 		}
+		else {
+			isHeadphonesConnected = NO;
+		}
 		
 		if( headphonesOnlyAnnounce && !isHeadphonesConnected) {
 			return YES;
